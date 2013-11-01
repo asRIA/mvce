@@ -9,7 +9,7 @@
 * </ul>
 * @author Piotr Paczkowski - kontakt@trzeci.eu
 */
-package pl.asria.asmvc.model 
+package pl.asria.mvc.model 
 {
 	import org.osflash.signals.Signal;
 	

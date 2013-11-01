@@ -15,17 +15,20 @@ package pl.asria.entity
 	import flash.utils.describeType;
 	import flash.utils.Dictionary;
 	import flash.utils.getQualifiedClassName;
+	import flash.utils.getTimer;
 	import pl.asria.tools.data.ICleanable;
 	import pl.asria.tools.utils.getClass;
+	import pl.asria.tools.utils.isBasedOn;
 	
 	public class EntityNode implements ICleanable
 	{
 		static protected var dCacheCollectAliasys:Dictionary = new Dictionary();
 	
-		private var dEntities:Dictionary = new Dictionary();
-		private var vEntities:Vector.<EntityNode> = new Vector.<EntityNode>();
+		protected var dEntities:Dictionary = new Dictionary();
 		internal var _parent:EntityNode;
-		
+		protected var vEntities:Vector.<EntityComponent> = new Vector.<EntityComponent>();
+		protected var profiling:Boolean = false;
+		protected var _exist:Boolean = true;
 		/**
 		 * EntityNode - 
 		 * @usage - 
@@ -37,36 +40,91 @@ package pl.asria.entity
 			
 		}
 		
+		/**
+		 * Propagate method only in childer 
+		 * @param	T - Bace class
+		 * @param	method
+		 * @param	...params
+		 */
 		public function propagate(T:Class, method:String, ...params):void
 		{
-			var entities:Array = getChildComponents(T);
+			CONFIG::debug
+			{
+				if (profiling)
+				{
+					var __time:int = getTimer();
+				}
+			}
+			//retrieve all entitis with T
+			var entities:Vector.<EntityComponent> = getChildComponents(T);
+			
+			// propagate method
 			for (var i:int = 0, i_max:int = entities.length; i < i_max; i++) 
 			{
-				entities[i][method].apply(this, params);
+				 entities[i][method].apply(this, params);
 			}
+			
+			CONFIG::debug
+			{
+				if(profiling)
+				{
+					trace(this+" time propagation["+method+"]: ", getTimer()-__time);
+				}
+			}
+			
 		}
+		
+		/**
+		 * Propagate some methow in all insances of specyfic class
+		 * @param	T
+		 * @param	method
+		 * @param	...params
+		 */
 		public function boardcast(T:Class, method:String, ...params):void
 		{
-			var entities:Array = findComponents(T);
+			var entities:Vector.<EntityComponent> = findComponents(T);
 			for (var i:int = 0, i_max:int = entities.length; i < i_max; i++) 
 			{
 				entities[i][method].apply(this, params);
 			}
 		}
 		
-		public final function addComponent(entity:EntityNode):void
+		
+		/**
+		 * Inject entity of class definition
+		 * @param	entityClass class must extends EntityNode
+		 */
+		public final function injectComponent(entityClass:Class):EntityComponent
 		{
-			if (entity.parentNode) entity.parentNode.removeComponent(entity);
-			entity._parent = this;
+			var resutl:EntityComponent;
+			if(isBasedOn(entityClass, EntityComponent))
+			{
+				resutl = new entityClass() 
+				addComponent(resutl);
+			}
 			
+			return resutl;
+		}
+		
+		/**
+		 * Add sub node component
+		 * @param	entity
+		 */
+		public final function addComponent(entity:EntityComponent):void
+		{
+			trace( "EntityNode.addComponent > entity : " + entity );
+			if (entity._node) entity._node.removeComponent(entity);
+			
+			entity._node = this;
+			preparateEntity(entity);
 			var def:Class = getClass(entity);
 			var aliasys:Vector.<String> = collectAliasys(def);
 			for (var i:int = 0, i_max:int = aliasys.length; i < i_max; i++) 
 			{
-				var collection:Array = dEntities[aliasys[i]];
+				var collection:Vector.<EntityComponent> = dEntities[aliasys[i]];
 				if (!collection)
 				{
-					dEntities[aliasys[i]]  = [entity];
+					dEntities[aliasys[i]]  = Vector.<EntityComponent>([entity]);
 				}
 				else if(collection.indexOf(entity) < 0)
 				{
@@ -74,10 +132,23 @@ package pl.asria.entity
 				}
 			}
 			vEntities.push(entity);
-			entity.onAttached();
+			entity.onAttached.dispatch(this);
 		}
 		
+		/**
+		 * Place for preparation some integram elements
+		 * @param	entity
+		 */
+		protected function preparateEntity(entity:EntityComponent):void 
+		{
+			
+		}
 		
+		/**
+		 * Private method to detect all aliasys of class (in general chain inheritable)
+		 * @param	T
+		 * @return
+		 */
 		private function collectAliasys(T:Class):Vector.<String> 
 		{
 			var result:Vector.<String> = dCacheCollectAliasys[T];
@@ -101,15 +172,19 @@ package pl.asria.entity
 			return result;
 		}
 		
-		
-		public final function removeComponent(entity:EntityNode):void
+		/**
+		 * Remove child component
+		 * @param	entity
+		 */
+		public final function removeComponent(entity:EntityComponent):void
 		{
-			if (entity.parentNode == this)
+			trace( "EntityNode.removeComponent > entity : " + entity );
+			if (entity._node == this)
 			{
 				var aliasys:Vector.<String> = collectAliasys(getClass(entity));
 				for (var i:int = 0, i_max:int = aliasys.length; i < i_max; i++) 
 				{
-					var collection:Array = dEntities[aliasys[i]];
+					var collection:Vector.<EntityComponent> = dEntities[aliasys[i]];
 					if (collection && collection.length)
 					{
 						var index:int = collection.indexOf(entity);
@@ -125,87 +200,138 @@ package pl.asria.entity
 				{
 					vEntities.splice(index, 1);
 				}
-				entity._parent = null;
-				entity.onDetatched();
+				entity._node = null;
+				entity.onDetatched.dispatch(this);
 			}
 		}
 		
+		/**
+		 * remove all component by class
+		 * @param	T
+		 */
 		public function removeComponents(T:Class):void
 		{
-			var list:Array = getChildComponents(T);
+			var list:Vector.<EntityComponent> = getChildComponents(T);
 			for (var i:int = 0, i_max:int = list.length; i < i_max; i++) 
 			{
 				removeComponent(list[i]);
 			}
 		}
 		
-		protected function onDetatched():void 
-		{
-			
-		}
 		
+		/**
+		 * Get first entity node by class in child components 
+		 * @param	T
+		 * @return
+		 */
 		public final function getChildComponent(T:Class):*
 		{
 			var tClass:String = getQualifiedClassName(T);
 			if (dEntities[tClass] && dEntities[tClass].length) return dEntities[tClass][0];
 			return null;
 		}
-		public final function getChildComponents(T:Class):Array
+		
+		/**
+		 * Get all components by class, looking in child nodes - not recursive!
+		 * @param	T
+		 * @return
+		 */
+		public final function getChildComponents(T:Class):Vector.<EntityComponent>
 		{
 			var tClass:String = getQualifiedClassName(T);
-			return dEntities[tClass] ? dEntities[tClass].slice() : [];
+			return dEntities[tClass] ? dEntities[tClass].slice() : new Vector.<EntityComponent>();
 		}
 		
-		public final function findComponent(T:Class):*
+		/**
+		 * Try to find component by specific class / alisa. This method looking recursive
+		 * @param	T
+		 * @return
+		 */
+		public final function findComponent(T:Class):EntityComponent
 		{
 			var tClass:String = getQualifiedClassName(T);
-			var result:*;
+			var result:EntityComponent;
 			if (dEntities[tClass] && dEntities[tClass].length) return dEntities[tClass][0];
-			for (var i:int = 0, i_max:int = vEntities.length; i < i_max; i++) 
-			{
-				result = vEntities[i].findComponent(T);
-				if (result) return result;
-			}
+			//for (var i:int = 0, i_max:int = vEntities.length; i < i_max; i++) 
+			//{
+				//result = vEntities[i].findComponent(T);
+				//if (result) return result;
+			//}
 			return result;
 		}
 		
-		public final function findComponents(T:Class):Array
+		/**
+		 * Find all list of component
+		 * @param	T
+		 * @return
+		 */
+		public final function findComponents(T:Class):Vector.<EntityComponent>
 		{
 			var tClass:String = getQualifiedClassName(T);
-			var result:Array = dEntities[tClass] || [];
-			for (var i:int = 0, i_max:int = vEntities.length; i < i_max; i++) 
-			{
-				result = result.concat(vEntities[i].findComponents(T));
-			}
-			return result.slice();
-		}
-		
-		protected function onAttached():void 
-		{
 			
-		}
-		
-		public function clean():void 
-		{
-			onClean();
-			if (_parent) _parent.removeComponent(this);
-			for (var i:int = 0, i_max:int = vEntities.length; i < i_max; i++) 
-			{
-				vEntities[i].clean();
-			}
-			vEntities = new Vector.<EntityNode>();
-			dEntities = new Dictionary();
-		}
-		
-		protected function onClean():void 
-		{
+			var result:Vector.<EntityComponent> = dEntities[tClass];
+			if (result) result = result.slice();
+			else result = new Vector.<EntityComponent>();
 			
+			//for (var i:int = 0, i_max:int = vEntities.length; i < i_max; i++) 
+			//{
+				//result = result.concat(vEntities[i].findComponents(T));
+			//}
+			return result;
 		}
+		
 		
 		public final function get parentNode():EntityNode 
 		{
 			return _parent;
 		}
+		
+		/**
+		 * Clean is pretty consuming method, because this operation have to clean every sub-child of three. 
+		 */
+		public function clean():void 
+		{
+			// helper, cleanLocals remove _parent reference
+			//var _parentTmp:EntityNode = _parent;
+			
+			cleanLocal();
+			
+			// remove component after ensure that every entity in childs is cleaned 
+			//if (_parentTmp) _parentTmp.removeComponent(this); 
+			_exist = false;
+			
+		}
+		
+		/**
+		 * this function clean up sub nodes, and itself, but not clean reference in parent. 
+		 * Omit remove from parent helps to improve performance.
+		 * Ensure that: beforeClean, onClean, onDetached are evaluated. 
+		 */
+		internal function cleanLocal():void
+		{
+			beforeClean();
+			for (var i:int = 0, i_max:int = vEntities.length; i < i_max; i++) 
+			{
+				vEntities[i].onCleanNode.dispatch(this);
+				vEntities[i].onDetatched.dispatch(this);
+				vEntities[i].clean();
+				
+			}
+			vEntities = new Vector.<EntityComponent>();
+			dEntities = new Dictionary();
+			_parent = null;
+		}
+		
+		protected function beforeClean():void 
+		{
+			
+		}
+		
+		public function get exist():Boolean 
+		{
+			return _exist;
+		}
+		
 	}
 
 }

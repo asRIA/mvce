@@ -9,7 +9,7 @@
 * </ul>
 * @author Piotr Paczkowski - kontakt@trzeci.eu
 */
-package pl.asria.asmvc.factory 
+package pl.asria.mvc.factory 
 {
 	import flash.utils.Dictionary;
 	import flash.utils.getQualifiedClassName;

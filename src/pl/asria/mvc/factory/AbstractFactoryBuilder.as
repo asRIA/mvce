@@ -9,7 +9,7 @@
 * </ul>
 * @author Piotr Paczkowski - kontakt@trzeci.eu
 */
-package pl.asria.asmvc.factory 
+package pl.asria.mvc.factory 
 {
 	import pl.asria.tools.data.AbstractClass;
 	
