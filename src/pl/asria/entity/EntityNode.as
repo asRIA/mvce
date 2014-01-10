@@ -24,8 +24,9 @@ package pl.asria.entity
 	{
 		static protected var dCacheCollectAliasys:Dictionary = new Dictionary();
 	
-		protected var dEntities:Dictionary = new Dictionary();
 		internal var _parent:EntityNode;
+		
+		protected var dEntities:Dictionary = new Dictionary();
 		protected var vEntities:Vector.<EntityComponent> = new Vector.<EntityComponent>();
 		protected var profiling:Boolean = false;
 		protected var _exist:Boolean = true;
@@ -136,7 +137,7 @@ package pl.asria.entity
 		}
 		
 		/**
-		 * Place for preparation some integram elements
+		 * Place for preparation some internal elements
 		 * @param	entity
 		 */
 		protected function preparateEntity(entity:EntityComponent):void 
@@ -252,11 +253,7 @@ package pl.asria.entity
 			var tClass:String = getQualifiedClassName(T);
 			var result:EntityComponent;
 			if (dEntities[tClass] && dEntities[tClass].length) return dEntities[tClass][0];
-			//for (var i:int = 0, i_max:int = vEntities.length; i < i_max; i++) 
-			//{
-				//result = vEntities[i].findComponent(T);
-				//if (result) return result;
-			//}
+			
 			return result;
 		}
 		
@@ -273,10 +270,6 @@ package pl.asria.entity
 			if (result) result = result.slice();
 			else result = new Vector.<EntityComponent>();
 			
-			//for (var i:int = 0, i_max:int = vEntities.length; i < i_max; i++) 
-			//{
-				//result = result.concat(vEntities[i].findComponents(T));
-			//}
 			return result;
 		}
 		

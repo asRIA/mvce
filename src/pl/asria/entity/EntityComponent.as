@@ -6,7 +6,7 @@
 *	<ul>
 *		<li>Create file</li>
 *	</ul>
-* </ul>
+* </ul>o
 * @author Piotr Paczkowski - kontakt@trzeci.eu
 */
 package pl.asria.entity 
@@ -17,10 +17,10 @@ package pl.asria.entity
 	public class EntityComponent implements ICleanable
 	{
 		internal var _node:EntityNode;
-		protected var _onDetatched:Signal = new Signal();
-		protected var _onCleanNode:Signal = new Signal();
-		protected var _onCleanNodeStart:Signal = new Signal();
-		protected var _onAttached:Signal = new Signal();
+		protected var _onDetatched:Signal = new Signal(EntityNode);
+		protected var _onCleanNode:Signal = new Signal(EntityNode);
+		protected var _onCleanNodeStart:Signal = new Signal(EntityNode);
+		protected var _onAttached:Signal = new Signal(EntityNode);
 		
 		public function get node():EntityNode 
 		{
@@ -49,12 +49,35 @@ package pl.asria.entity
 		
 		
 		/**
-		 * EntityComponent - 
+		 * EntityComponent - Main controler of entities in system
 		 * @usage - 
 		 * @version - 1.0
 		 * @author - Piotr Paczkowski - kontakt@trzeci.eu
 		 */
 		public function EntityComponent() 
+		{
+			_onAttached.add(onAttachedFunction);
+			_onDetatched.add(onDetachedFunction);
+			_onCleanNode.add(onCleanNodeFunction);
+			_onCleanNodeStart.add(onCleanNodeStartFunction);
+		}
+		
+		protected function onCleanNodeStartFunction(node:EntityNode):void 
+		{
+			
+		}
+		
+		protected function onCleanNodeFunction(node:EntityNode):void 
+		{
+			
+		}
+		
+		protected function onDetachedFunction(node:EntityNode):void 
+		{
+			
+		}
+		
+		protected function onAttachedFunction(node:EntityNode):void 
 		{
 			
 		}

@@ -1,0 +1,100 @@
+<languageVersion : 1.0;>
+ 
+kernel RadialRipple
+<   namespace : "se.riol.filters";
+    vendor : "Richard Olsson";
+    version : 1;
+    description : "A rippling effect, animatable using the phase parameter";
+>
+{
+    input image4 src;
+    output pixel4 dst;
+ 
+ 
+    /**
+     * Vector containing coordinates for the center point which
+     * will be used as the epi-center of the rippling circles.
+    */
+    parameter float2 center
+    <
+        minValue: float2(0.0, 0.0);
+        maxValue: float2(8192.0, 8192.0);
+        defaultValue: float2(256.0, 256.0);
+    >;
+ 
+ 
+    /**
+     * The phase used in the sine function that calculates the
+     * waves. Animate this to simulate ripples flowing out from
+     * the center point.
+    */
+    parameter float phase
+    <
+        minValue: 0.0;
+        maxValue: 6.283185307179586;    // 2PI rad, 360 deg
+        defaultValue: 0.0;
+    >;
+ 
+ 
+    /**
+     * The width of the ripple (an entire period, from high through
+     * low to the next high.)
+    */
+    parameter float size
+    <
+        minValue: 0.0;
+        maxValue: 1.0;
+        defaultValue: 0.5;
+    >;
+ 
+ 
+    /**
+     * The amount controls the amplitude of the wave used to calculate
+     * the offset of a given pixel using it's distance from the center.
+     * Higher number causes big offsets which in turn makes the effect
+     * pretty extreme. Usually the default (or slightly below) is good.
+    */
+    parameter float amount
+    <
+        minValue: 0.0;
+        maxValue: 1.0;
+        defaultValue: 0.1;
+    >;
+ 
+ 
+    /**
+     * This value is used to calculate the amplitude given a certain
+     * distance from the center. As evaluations approaches the radius
+     * periphery, the amplitude decreases.
+    */
+    parameter float radius
+    <
+        minValue: 0.0;
+        maxValue: 8192.0;
+        defaultValue: 128.0;
+    >;
+ 
+ 
+    void
+    evaluatePixel()
+    {
+        float dist;
+        float2 offsets;
+        float offsetFactor;
+        float amountWithFalloff;
+ 
+        // Calculate distance between center point and current pixel
+        // position and use this to perform falloff on amount
+        dist = distance(outCoord(), center);
+        amountWithFalloff = amount * (1.0-min(dist/radius, 1.0));
+ 
+        // Offset the delta vector between current pixel and center by
+        // another vector that is calculated using sin(distance).
+        offsetFactor = amountWithFalloff * sin((1.0-size)*dist - phase);
+        offsets = float2(offsetFactor,offsetFactor) * (outCoord()-center);
+ 
+        // Add offset vector to current pixel position vector and sample
+        // that pixel in this position.
+        dst = sampleLinear(src, outCoord() + offsets);
+    }
+}

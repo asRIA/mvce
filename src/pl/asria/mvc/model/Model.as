@@ -12,10 +12,10 @@
 package pl.asria.mvc.model 
 {
 	import org.osflash.signals.Signal;
+	import pl.asria.mvc.interfaces.IComponentMVC;
 	
-	public class Model 
+	public class Model implements IComponentMVC
 	{
-	
 		/**
 		 * Model - 
 		 * @usage - 
