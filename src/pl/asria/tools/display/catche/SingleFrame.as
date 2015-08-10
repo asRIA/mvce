@@ -124,7 +124,7 @@ package pl.asria.tools.display.catche
 				
 				if(_debugRect)
 				{
-					drawDebugRectangle();
+					//drawDebugRectangle();
 				}
 					
 				bitmap.unlock();

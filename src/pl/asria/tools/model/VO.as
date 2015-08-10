@@ -217,6 +217,16 @@ package pl.asria.tools.model
 			_versionVO = value;
 		}
 		
+		public function get onChange():Signal 
+		{
+			return _onChange;
+		}
+		
+		public function get onChangeValue():Signal 
+		{
+			return _onChangeValue;
+		}
+		
 		/**
 		 * Instantine model as class. Required is define class name definition in jsonData.className
 		 * @param	jsonData

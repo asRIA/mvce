@@ -32,15 +32,10 @@ package pl.asria.tools.utils
 		
 		public static function checkVersion(major:int, minor:int = -1, revision:int = -1):Boolean
 		{
-			var pass:Boolean = _version[0] >= major;
-			if (minor >= 0) {
-				pass &&=  _version[1] >= minor;
-				if (revision >= 0) {
-					pass &&=  _version[2] >= revision;
-					
-				}
-			}
-			return pass;
+			if (_version[0] > major) return true;
+			if (_version[1] > minor) return true;
+			if (_version[2] >= revision) return true;
+			return false;
 		}
 		
 		static public function get os():String 
